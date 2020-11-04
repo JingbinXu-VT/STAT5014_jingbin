@@ -1,0 +1,88 @@
+---
+title: "STAT 5014 Homework 5"
+author: "Jingbin Xu"
+date: "10/23/2020"
+output: pdf_document
+---
+
+# Problem 3
+## 1. How many data points were there in the complete dataset?
+  
+There are 886930 rows in the complete dataset with 70 variables.
+  
+```{r problem 3 load data, echo = F}
+# library the required packages to plot and compute
+library(tidyverse)
+library(MASS)
+library(ggfortify)
+## import data
+setwd("~/Desktop")
+dt <- read_csv("Edstats_csv/EdstatsData.csv")
+```
+
+```{r problem 3-1}
+# compute the dimension of the raw dataset
+dim(dt) # 886930 rows with 70 columns
+```
+  
+## 2. In your clean data?
+    
+There are 4060128 data points in the clean dataset.
+    
+```{r, problem 3-2}
+# remove the irrelevant column
+delete_column <- c(3:4,50:70)
+# retrieve the clean dataset
+dt.clean <- dt[, -delete_column]
+# head(dt.clean)
+# remove the missing values in the complete dataset
+df <- gather(dt.clean, key = "Year", value = "Value", 3:47, na.rm = T)
+# rename the columns
+colnames(df) <- c("name", "code", "year", "value")
+```
+  
+## 3. Creat a summary table of indicators for comparison of 2 countries.
+  
+```{r problem 3-3}
+# compute the summary statistics for country code ARB and EAS
+t <- df %>% 
+  filter(get('code') %in% c("ARB", "EAS") ) %>% 
+  group_by(code) %>% 
+  summarise("Mean" = mean(value), "Standard Deviation" = sd(value), .groups = "drop")
+# table the ARB and EAS for display
+knitr::kable(t[1:2,])
+```
+    
+  
+# Problem 4
+  
+
+```{r problem 4}
+# select the CHN gdp
+CHN <- df %>%  
+  filter(get('code') == "CHN")
+# fit the linear regression model on CHN gdp
+lmfit <- lm(value ~ year, data = CHN)
+# plot the plots with 2 rows and 3 columns
+par(mfrow = c(2, 3))
+# residual vs fitted value
+plot(lmfit$fitted.values, lmfit$residuals, xlab = "Fitted Value", ylab = "Residual")
+# R studentized residual vs fitted value
+plot(lmfit$fitted.values, studres(lmfit), xlab = "Fitted Value", ylab = "RStudent")
+# leverage point vs r studentized residual
+plot(hatvalues(lmfit), studres(lmfit), xlab = "Leverage", ylab = "RStudent")
+qqnorm(lmfit$residuals)
+qqline(lmfit$residuals)
+# fitted value with the CHN gdp value
+plot(lmfit$fitted.values, CHN$value, xlab = "Fitted Value", ylab = "GDP")
+# cooks distance with the observations
+plot(cooks.distance(lmfit), ylab = "Cook's Distance", xlab = "Observation")
+```
+
+# Problem 5
+
+```{r problem 5}
+# using plackage of ggplot extension to plot the aboved plots.
+autoplot(lmfit, which = 1:6, nrow = 2)
+```
+  
